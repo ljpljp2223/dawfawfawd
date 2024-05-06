@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>汉诺塔游戏</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+  }
+
+  .tower-container {
+    display: flex;
+    justify-content: space-between;
+    width: 300px;
+    height: 200px;
+  }
+
+  .tower {
+    position: relative;
+    width: 5px;
+    height: 200px;
+    background-color: #333;
+  }
+
+  .disk {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #666;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.5s ease-in-out;
+  }
+
+  select, button {
+    margin: 10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="tower-container">
+  <div class="tower" id="towerA"></div>
+  <div class="tower" id="towerB"></div>
+  <div class="tower" id="towerC"></div>
+</div>
+
+<select id="diskCount">
+  <option value="3">3</option>
+  <option value="4">4</option>
+  <option value="5">5</option>
+</select>
+<button id="startBtn">开始</button>
+<button id="pauseBtn">暂停</button>
+<button id="resumeBtn">恢复</button>
+<select id="moveCount">
+  <option value="1"></option>
+  <option value="2"></option>
+  <option value="3"></option>
+</select>
+
+<script>
+const towerA = document.getElementById('towerA');
+const towerB = document.getElementById('towerB');
+const towerC = document.getElementById('towerC');
+const diskCountSelect = document.getElementById('diskCount');
+const moveCountSelect = document.getElementById('moveCount');
+const startBtn = document.getElementById('startBtn');
+const pauseBtn = document.getElementById('pauseBtn');
+const resumeBtn = document.getElementById('resumeBtn');
+let disks = [];
+let isPaused = false;
+
+function createDisk(size) {
+  const disk = document.createElement('div');
+  disk.className = 'disk';
+  disk.style.width = size * 20 + 'px';
+  disk.style.height = '20px';
+  disk.style.backgroundColor = '#' + Math.floor(Math.random()*16777215).toString(16);
+  return disk;
+}
+
+function resetTowers() {
+  towerA.innerHTML = '';
+  towerB.innerHTML = '';
+  towerC.innerHTML = '';
+  disks = [];
+}
+
+function populateTower(tower, count) {
+  for (let i = count; i > 0; i--) {
+    const disk = createDisk(i);
+    tower.appendChild(disk);
+    disks.push(disk);
+  }
+}
+
+function moveDisk(from, to) {
+  const disk = from.lastChild;
+  to.appendChild(disk);
+  const fromRect = from.getBoundingClientRect();
+  const toRect = to.getBoundingClientRect();
+  const distance = toRect.left - fromRect.left;
+  disk.style.transition = 'transform 0.5s ease-in-out';
+  setTimeout(() => {
+    disk.style.transform = `translateX(${distance}px) translateY(-100%)`;
+  }, 10);
+  setTimeout(() => {
+    disk.style.transform = 'translateX(-50%) translateY(-100%)';
+  }, 510);
+}
+
+
+async function moveTower(n, source, target, aux) {
+  if (n === 1) {
+    await moveDisk(source, target);
+    return;
+  }
+  await moveTower(n - 1, source, aux, target);
+  moveDisk(source, target);
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  await moveTower(n - 1, aux, target, source);
+}
+
+async function play() {
+  startBtn.disabled = true;
+  pauseBtn.disabled = false;
+  resumeBtn.disabled = true;
+  const diskCount = parseInt(diskCountSelect.value);
+  const moveCount = parseInt(moveCountSelect.value);
+  resetTowers();
+  populateTower(towerA, diskCount);
+  await moveTower(diskCount, towerA, towerC, towerB);
+  startBtn.disabled = false;
+  pauseBtn.disabled = true;
+  resumeBtn.disabled = true;
+}
+
+function pause() {
+  isPaused = true;
+  pauseBtn.disabled = true;
+  resumeBtn.disabled = false;
+}
+
+function resume() {
+  isPaused = false;
+  pauseBtn.disabled = false;
+  resumeBtn.disabled = true;
+}
+
+startBtn.addEventListener('click', () => {
+  if (!isPaused) {
+    play();
+  }
+});
+
+pauseBtn.addEventListener('click', () => {
+  pause();
+});
+
+resumeBtn.addEventListener('click', () => {
+  resume();
+});
+</script>
+
+</body>
+</html>
